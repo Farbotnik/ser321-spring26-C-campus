@@ -198,4 +198,4 @@ gatekeeper.uccu.com - - [31/Aug/1995:23:59:49 -0400] "GET /images/lc39a-logo.gif
 cys-cap-9.wyoming.com - - [31/Aug/1995:23:59:52 -0400] "GET /shuttle/missions/sts-71/movies/sts-71-launch-3.mpg HTTP/1.0" 200 57344
 www-c8.proxy.aol.com - - [31/Aug/1995:23:59:52 -0400] "GET /icons/unknown.xbm HTTP/1.0" 200 515
 cindy.yamato.ibm.co.jp - - [31/Aug/1995:23:59:53 -0400] "GET /images/kscmap-small.gif HTTP/1.0" 200 39017
-Farbotnik:This is a great assignment 20260128
+nfarbotn:This is a great assignment 20260128
