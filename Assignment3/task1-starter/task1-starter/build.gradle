@@ -1,0 +1,64 @@
+apply plugin: 'java'
+
+description = "Client Server Socket Example"
+
+repositories {
+  mavenCentral()
+}
+
+dependencies{
+  implementation "junit:junit:4.12" // uses JUnit 4 if you want to you could upgrade to 5 if you like
+  implementation 'org.json:json:20171018' // org.json
+  implementation files('libs/mysteryservice.jar') // Mystery service for Task 1.2
+}
+
+// Server and Client tasks with configurable host and port default also works
+// Usage:
+// Default
+//   gradle Server
+//   gradle Client
+
+// Change port, host
+//   gradle Server -Pport=9000
+//   gradle Client -Phost=localhost -Pport=9000
+tasks.register('Server', JavaExec) {
+  group 'TCP Server/Client'
+  description 'Creates Server socket - use -Pport=<port> to override default port'
+
+  classpath = sourceSets.main.runtimeClasspath
+
+  mainClass.set('SockServer')
+  args project.hasProperty('port') ? project.getProperty('port') : '8888'
+}
+
+tasks.register('Client', JavaExec) {
+  group 'TCP Server/Client'
+  description 'Creates client socket - use -Phost=<host> -Pport=<port> to override defaults'
+
+  standardInput = System.in
+  classpath = sourceSets.main.runtimeClasspath
+
+  mainClass.set('SockClient')
+  args project.hasProperty('host') ? project.getProperty('host') : 'localhost'
+  args project.hasProperty('port') ? project.getProperty('port') : '8888'
+}
+
+tasks.register('serverTest', Test) { // run only the ServerTest class, expects that the server is running! Expects server on 8888
+    description = 'Runs only the ServerTest class'
+    group = 'verification' // Optional: Categorize your task
+
+    // Filter to include only the desired test class
+    filter {
+        includeTestsMatching "ServerTest"
+    }
+}
+
+tasks.register('simpleTest', Test) { // run only the ServerTest class, expects that the server is running! Expects server on 8888
+    description = 'Runs the tests locally without networking'
+    group = 'verification' // Optional: Categorize your task
+
+    // Filter to include only the desired test class
+    filter {
+        includeTestsMatching "Testing"
+    }
+}
