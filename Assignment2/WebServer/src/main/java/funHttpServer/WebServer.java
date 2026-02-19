@@ -25,6 +25,9 @@ import java.util.Random;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 class WebServer {
   public static void main(String args[]) {
@@ -239,10 +242,6 @@ class WebServer {
               }
           }
 
-
-          // TODO: Include error handling here with a correct error code and
-          // a response that makes sense
-
         } else if (request.contains("github?")) {
           // pulls the query from the request and runs it with GitHub's REST API
           // check out https://docs.github.com/rest/reference/
@@ -251,23 +250,50 @@ class WebServer {
           //     then drill down to what you care about
           // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
           //     "/repos/OWNERNAME/REPONAME/contributors"
+            Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+            if (!request.contains("query=")) {
+                builder.append("HTTP/1.1 400 Bad Request\n");
+                builder.append("Content-Type: text/html; charset=utf-8\n");
+                builder.append("\n");
+                builder.append("ERROR: Missing query parameter. ex. /github?query=users/NAME/repos\n");
+            } else {
+                query_pairs = splitQuery(request.replace("github?", ""));
+                // handles /github?query
+                if (query_pairs.get("query") == null || query_pairs.get("query").equals("")) {
+                    builder.append("HTTP/1.1 400 Bad Request\n");
+                    builder.append("Content-Type: text/html; charset=utf-8\n");
+                    builder.append("\n");
+                    builder.append("ERROR: Missing parameter. ex. /github?query=users/NAME/repos\n");
+                }
+                else {
+                    try {
+                        String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+                        JSONArray array = new JSONArray(json);
+                        builder.append("HTTP/1.1 200 OK\n");
+                        builder.append("Content-Type: text/plain; charset=utf-8\n");
+                        builder.append("\n");
 
-          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-          query_pairs = splitQuery(request.replace("github?", ""));
-          String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-          System.out.println(json);
-
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Check the todos mentioned in the Java source file");
-          // TODO: Parse the JSON returned by your fetch and create an appropriate
-          // response based on what the assignment document asks for
-
-        } else if (request.contains("addline?")) {
-          // This multiplies two numbers, there is NO error handling, so when
-          // wrong data is given this just crashes
-          //try{
+                        for (int i = 0; i < array.length(); i++) {
+                            // get json data
+                            JSONObject res = array.getJSONObject(i);
+                            String fullName = res.getString("full_name");
+                            int id = res.getInt("id");
+                            String login = res.getJSONObject("owner").getString("login");
+                            // print json data
+                            builder.append("Name: " + fullName);
+                            builder.append(", ID: " + id);
+                            builder.append(", Login: " + login);
+                            builder.append("\n");
+                        }
+                    } catch (Exception e) {
+                        builder.append("HTTP/1.1 404 Not Found\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("ERROR: Invalid Input\n");
+                    }
+                }
+            }
+          } else if (request.contains("addline?")) {
           Map<String, String> query_pairs = new LinkedHashMap<String, String>();
           // extract path parameters
           query_pairs = splitQuery(request.replace("addline?", ""));
@@ -309,10 +335,124 @@ class WebServer {
           builder.append("Content-Type: text/html; charset=utf-8\n");
           builder.append("\n");
           builder.append(story);
+        } else if (request.contains("convert?")) {
+            // this converts text to  uppercase (0) or leetspeak (1)
+            Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+            if (!request.contains("type") || !request.contains("text")) {
+                builder.append("HTTP/1.1 400 Bad Request\n");
+                builder.append("Content-Type: text/html; charset=utf-8\n");
+                builder.append("\n");
+                builder.append("ERROR: invalid input\n");
+            } else {
+                query_pairs = splitQuery(request.replace("convert?", ""));
+                String typeParam = query_pairs.get("type");
+                String textParam = query_pairs.get("text");
 
+                if (typeParam == null || textParam == null || typeParam.equals("") || textParam.equals("")) {
+                    builder.append("HTTP/1.1 400 Bad request\n");
+                    builder.append("Content-Type: text/html; charset=utf-8\n");
+                    builder.append("\n");
+                    builder.append("ERROR: Missing values in type= or text=\n");
+
+                } else {
+                    try {
+                        Integer type = Integer.parseInt(typeParam);
+                        String result = "";
+                        if (type == 0) {
+                            // capitalize every letter
+                            result = textParam.toUpperCase();
+                        } else if (type == 1) {
+                            // convert to leetspeak
+                            String[] letters = {"a","e","i","o","t","s"};
+                            String[] leet    = {"4","3","1","0","7","5"};
+                            String converted = "";
+                            //loop thru the str and convert
+                            for (int i = 0; i < textParam.length(); i++) {
+                                char a = textParam.charAt(i);
+                                String lower = String.valueOf(Character.toLowerCase(a));
+                                boolean replaced = false;
+
+                                for (int j = 0; j < letters.length; j++) {
+                                    if (lower.equals(letters[j])) {
+                                        converted = converted + leet[j];
+                                        replaced = true;
+                                        break;
+                                    }
+                                }
+                                if (!replaced) {
+                                    converted = converted + a;
+                                }
+                            }
+                            result = converted;
+                        } else {
+                            builder.append("HTTP/1.1 400 Bad Request\n");
+                            builder.append("Content-Type: text/html; charset=utf-8\n");
+                            builder.append("\n");
+                            builder.append("ERROR: type should be 0 or 1\n");
+                        }
+                        builder.append("HTTP/1.1 200 OK\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("Result is: " + result);
+
+                    } catch (NumberFormatException e) {
+                        builder.append("HTTP/1.1 400 Bad Request\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("ERROR: must be an int\n");
+                    }
+                }
+            }
+        } else if (request.contains("count?")) {
+            // This counts the number of a specified character in a string
+            try {
+                Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+
+                if (!request.contains("char") || !request.contains("text")) {
+                    builder.append("HTTP/1.1 400 Bad Request\n");
+                    builder.append("Content-Type: text/html; charset=utf-8\n");
+                    builder.append("\n");
+                    builder.append("ERROR: Missing char or text\n");
+                } else {
+                    query_pairs = splitQuery(request.replace("count?", ""));
+                    String charParam = query_pairs.get("char");
+                    String textParam = query_pairs.get("text");
+
+                    if (charParam == null || textParam == null || charParam.equals("") || textParam.equals("")) {
+                        builder.append("HTTP/1.1 400 Bad Request\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("ERROR: Missing values in char= or text=\n");
+
+                    } else if (charParam.length() != 1) {
+                        builder.append("HTTP/1.1 400 Bad Request\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("ERROR: char need to be exactly 1 character\n");
+
+                    } else {
+                        //counting here
+                        char target = charParam.charAt(0);
+                        int count = 0;
+                        for (int i = 0; i < textParam.length(); i++) {
+                            if (textParam.charAt(i) == target) {
+                                count++;
+                            }
+                        }
+                        builder.append("HTTP/1.1 200 OK\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("Count is: " + count);
+                    }
+                }
+            } catch (Exception e) {
+                builder.append("HTTP/1.1 400 Bad Request\n");
+                builder.append("Content-Type: text/html; charset=utf-8\n");
+                builder.append("\n");
+                builder.append("ERROR: bad request\n");
+            }
         } else {
           // if the request is not recognized at all
-
           builder.append("HTTP/1.1 400 Bad Request\n");
           builder.append("Content-Type: text/html; charset=utf-8\n");
           builder.append("\n");
