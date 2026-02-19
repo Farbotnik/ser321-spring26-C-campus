@@ -196,25 +196,49 @@ class WebServer {
             builder.append("File not found: " + file);
           }
         } else if (request.contains("multiply?")) {
-          // This multiplies two numbers, there is NO error handling, so when
-          // wrong data is given this just crashes
-
+          // This multiplies two numbers
           Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-          // extract path parameters
           query_pairs = splitQuery(request.replace("multiply?", ""));
 
-          // extract required fields from parameters
-          Integer num1 = Integer.parseInt(query_pairs.get("num1"));
-          Integer num2 = Integer.parseInt(query_pairs.get("num2"));
+          if(!request.contains("num1")|| !request.contains("num2")){
+              builder.append("HTTP/1.1 400 Bad Request\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("ERROR: Missing num1 or num2\n");
+          } else {
+              // added variables to error handle if one value is missed
+              String param1 = query_pairs.get("num1");
+              String param2 = query_pairs.get("num2");
 
-          // do math
-          Integer result = num1 * num2;
+              if (param1 == null|| param2 == null|| param1.equals("") || param2.equals("")) {
+                  // handles case where no value is attached to num1 or num2
+                  builder.append("HTTP/1.1 418 Teapot\n");
+                  builder.append("Content-Type: text/html; charset=utf-8\n");
+                  builder.append("\n");
+                  builder.append("ERROR: Missing values in num1= or num2=\n");
+              } else {
+                  try {
+                      // working
+                      Integer num1 = Integer.parseInt(param1);
+                      Integer num2 = Integer.parseInt(param2);
 
-          // Generate response
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Result is: " + result);
+                      // do math
+                      Integer result = num1 * num2;
+
+                      // Generate response
+                      builder.append("HTTP/1.1 200 OK\n");
+                      builder.append("Content-Type: text/html; charset=utf-8\n");
+                      builder.append("\n");
+                      builder.append("Result is: " + result);
+                  }  catch (NumberFormatException e) {
+                      builder.append("HTTP/1.1 400 Bad Request\n");
+                      builder.append("Content-Type: text/html; charset=utf-8\n");
+                      builder.append("\n");
+                      builder.append("ERROR: num1 or num2 not integers\n");
+                  }
+              }
+          }
+
 
           // TODO: Include error handling here with a correct error code and
           // a response that makes sense
@@ -257,11 +281,11 @@ class WebServer {
             builder.append("I am not sure what you want me to do...");
           }
           else {
-            if (text == "") {
+            if (text.equals("")) {
               builder.append("HTTP/1.1 400 Bad Request\n");
               builder.append("Content-Type: text/html; charset=utf-8\n");
               builder.append("\n");
-              builder.append("I am not sure what you want me to do...");
+              builder.append("ERROR: Try adding text!");
             } else if (text.length() > 800) {
               builder.append("HTTP/1.1 408 Request Timeout\n");
               builder.append("Content-Type: text/html; charset=utf-8\n");
