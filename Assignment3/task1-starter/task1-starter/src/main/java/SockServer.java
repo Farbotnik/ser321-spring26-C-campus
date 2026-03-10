@@ -94,6 +94,8 @@ public class SockServer {
             res = calculatemany(req);
           } else if (req.getString("type").equals("stringconcatenation")) {
             res = concat(req);
+          } else if (req.getString("type").equals("currency")) {
+              res = currency(req);
           } else if (req.getString("type").equals("analyzer")) {
             // Mystery service - discover the protocol
             res = MysteryService.processRequest(req);
@@ -181,14 +183,86 @@ public class SockServer {
 
     res = new JSONObject();
     res.put("ok", true);
-    res.put("type", "concat");
+    res.put("type", "stringconcatenation");
 
     String str1 = req.getString("string1");
     String str2 = req.getString("string2");
-    res.put("combined", str1 + str2);
+    res.put("result", str1 + str2);
 
     return res;
   }
+  static JSONObject currency(JSONObject req) {
+    System.out.println("Currency request: " + req.toString());
+    JSONObject res = new JSONObject();
+
+    // check for missing fields
+    JSONObject amountCheck = testField(req, "amount");
+    if (!amountCheck.getBoolean("ok")) { return amountCheck; }
+    JSONObject fromCheck = testField(req, "from");
+    if (!fromCheck.getBoolean("ok")) { return fromCheck; }
+    JSONObject toCheck = testField(req, "to");
+    if (!toCheck.getBoolean("ok")) { return toCheck; }
+
+    // check if valid number
+    double amount;
+    try {
+        amount = req.getDouble("amount");
+    } catch (org.json.JSONException e) {
+        res.put("ok", false);
+        res.put("message", "Value must be a number");
+        return res;
+    }
+    // check if amount negative
+    if (amount < 0) {
+        res.put("ok", false);
+        res.put("message", "Field 'amount' cannot be negative");
+        return res;
+    }
+      String from = req.getString("from").toUpperCase();
+      String to = req.getString("to").toUpperCase();
+
+      String[] validCurrencies = {"USD", "EUR", "GBP"};
+      double[] rateValues = {1.0, 0.92,0.79};
+
+      int fromIndex = -1;
+      int toIndex = -1;
+      for (int i = 0; i < validCurrencies.length; i++) {
+          if (validCurrencies[i].equals(from)) {
+              fromIndex = i;
+          }
+          if (validCurrencies[i].equals(to)){
+              toIndex   = i;
+          }
+      }
+
+      // check error response 1
+      if (fromIndex == -1) {
+          res.put("ok", false);
+          res.put("message", "Field 'from' must be one of: USD, EUR, GBP");
+          return res;
+      }
+      // check error response 2
+      if (toIndex == -1) {
+          res.put("ok", false);
+          res.put("message", "Field 'to' must be one of: USD, EUR, GBP");
+          return res;
+      }
+    // math
+    double rateFrom = rateValues[fromIndex];
+    double rateTo = rateValues[toIndex];
+    double rate = Math.round((rateTo/rateFrom)*10000.0)/10000.0;
+    double result = Math.round(amount*rate*100.0)/100.0;
+    // build response
+    res.put("ok", true);
+    res.put("type", "currency");
+    res.put("from", from);
+    res.put("to", to);
+    res.put("amount", amount);
+    res.put("result", result);
+    res.put("rate", rate);
+
+    return res;
+    }
 
   // handles the calculatemany request with multiple operations
   static JSONObject calculatemany(JSONObject req){

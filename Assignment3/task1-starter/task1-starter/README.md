@@ -138,7 +138,86 @@ Error response:
 3. Write the complete protocol specification here (follow the format of echo and add above)
 4. Document ALL possible error cases (hint: there are at least 4 different error cases)
 
-YOUR PROTOCOL DOCUMENTATION GOES HERE
+### CalculateMany: ###
+Request:
+
+    {
+        "type" : "calculatemany",  -- type of request
+        "numList" : <JSONArray of ints>, -- non-empty array of integers
+        "operation" : <String> -- operation to perform: "add", "multiply", "average"
+    }
+
+General response
+
+    {
+        "type" : "calculatemany",  -- type of request
+        "ok" : <bool>, -- true or false depending on request
+        "operation" : <String>,  -- operation performed
+        "count" : <int>,  -- amount of numbers
+        "sum" : <int>, -- result if add operation and ok true
+        "product" : <int>,  -- result if multiply operation and ok true
+        "average" : <double> , -- result if average operation and ok true
+        "message" : <String>  -- error message if okay false
+    }
+
+Success response:
+
+    {
+        "type" : "calculatemany",
+        "ok" : true,
+        "operation" : add,
+        "count" : <int>, -- size of numList
+        "sum" : <int> -- sum of all ints in numList
+    }
+
+    {
+        "type" : "calculatemany",
+        "ok" : true,
+        "operation" : multiply,
+        "count" : <int>, -- size of numList
+        "sum" : <int> -- product of all ints in numList
+    }
+
+    {
+        "type" : "calculatemany",
+        "ok" : true,
+        "operation" : average,
+        "count" : <int>, -- size of numList
+        "sum" : <int> -- average of all ints in numList
+    }
+
+Error response:
+
+    {
+        "type" : "calculatemany",
+        "ok" : false,
+        "message" : "Array 'numList' cannot be empty" - error message for empty numList
+    }
+
+    {
+        "type" : "calculatemany",
+        "ok" : false,
+        "message" : "Invalid operation '<value>'. Valid operations: add, multiply, average" - error message for invalid operation
+    }
+
+    {
+        "type" : "calculatemany",
+        "ok" : false,
+        "message" : "Values in numList must be integers" - error message for improper type
+    }
+
+    {
+        "type" : "calculatemany",
+        "ok" : false,
+        "message" : "Field numList does not exist in request" - error message for missing numList
+    }
+
+    {
+        "type" : "calculatemany",
+        "ok" : false,
+        "message" : "Field operation does not exist in request" - error message for missing operation
+    }
+
 
 ### StringConcatenation: ###
 This service will concatenate two strings provided by the client. The client will send a request to the server with two strings to be concatenated.
