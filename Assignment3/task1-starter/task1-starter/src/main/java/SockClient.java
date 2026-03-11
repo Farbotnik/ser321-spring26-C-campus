@@ -38,7 +38,7 @@ class SockClient {
       System.out.println("Client connected to server.");
       boolean requesting = true;
       while (requesting) {
-        System.out.println("What would you like to do: 1 - echo, 2 - add, 3 - string concatenation (0 to quit)");
+        System.out.println("What would you like to do: 1 - echo, 2 - add, 3 - string concatenation 4 - currency (0 to quit)");
         Scanner scanner = new Scanner(System.in);
         int choice = Integer.parseInt(scanner.nextLine());
         // You can assume the user put in a correct input, you do not need to handle errors here
@@ -71,10 +71,26 @@ class SockClient {
             System.out.println("Enter second string:");
             String str2 = scanner.nextLine();
             json.put("type", "stringconcatenation");
-            json.put("str1", str1);
+            json.put("string1", str1);
             json.put("string2", str2);
             break;
-            // TODO: implement currency (4) or playlist (5) for Part C
+        case 4:
+            System.out.println("Choose currency conversion, enter amount:");
+            String amount = scanner.nextLine();
+            System.out.println("Enter source currency (USD, EUR, GBP):");
+            String from = scanner.nextLine();
+            System.out.println("Enter target currency (USD, EUR, GBP):");
+            String to = scanner.nextLine();
+            json.put("type", "currency");
+            try {
+                json.put("amount", Double.parseDouble(amount));
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid amount, please enter a number");
+                continue;
+            }
+            json.put("from", from);
+            json.put("to", to);
+            break;
         }
         if(!requesting) {
           continue;
@@ -94,8 +110,13 @@ class SockClient {
         if (res.getBoolean("ok")){
           if (res.getString("type").equals("echo")) {
             System.out.println(res.getString("echo"));
+          } else if (res.getString("type").equals("currency"))
+            {
+              System.out.println(res.getDouble("amount") + " " + res.getString("from")
+                      + " = " + res.getDouble("result") + " " + res.getString("to")
+                      + " rate: " + res.getDouble("rate") + "");
           } else {
-            System.out.println(res.getInt("result"));
+              System.out.println(res.getString("result"));
           }
         } else {
           System.out.println(res.getString("message"));

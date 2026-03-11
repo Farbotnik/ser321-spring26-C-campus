@@ -107,40 +107,303 @@ The video demonstrates:
 **Request:**
 ```json
 {
-    [Your protocol design here]
+    "type": "start"
 }
 ```
 
 **Success Response:**
 ```json
 {
-    [Your protocol design here]
+    "type": "start",
+    "ok": true,
+    "message": "hangmanSting",
+    "hiddenWord": "_____",
+    "wordLength": 5,
+    "lives": 6,
+    "misses": 2,
+    "points": 8
 }
 ```
 
 **Error Response(s):**
 ```json
 {
-    [Document all possible errors]
+    "type": "start",
+    "ok": false,
+    "message": "Game already in progress"
+}
+
+```
+
+---
+
+### 3. Guess Letter
+
+**Request: Letter Guess**
+```json
+{
+    "type": "guess",
+    "letter": "a"
+}
+```
+**Request: Word Guess**
+```json
+{
+    "type": "guess",
+    "letter": "array"
 }
 ```
 
+**Success Response: Correct**
+```json
+{
+    "type": "guess",
+    "ok": true, 
+    "correct": true,
+    "message": "hangmanString",
+    "hiddenWord": "a__a_",
+    "wordLength": 5,
+    "lives": 6,
+    "misses": 0,
+    "points": 10
+}
+```
+**Success Response: Wrong**
+```json
+{
+  "type": "guess",
+  "ok": true,
+  "correct": false,
+  "message": "hangmanString",
+  "hiddenWord": "_____",
+  "wordLength": 5,
+  "lives": 5,
+  "misses": 1,
+  "points": -1
+}
+```
+``
+**Success Response: Wrong Word**
+```json
+{
+  "type": "guess",
+  "ok": true,
+  "correct": false,
+  "message": "hangmanString",
+  "hiddenWord": "_____",
+  "wordLength": 5,
+  "lives": 4,
+  "misses": 2,
+  "points": -2
+}
+```
+
+**Error Response(s): Guess non-letter**
+```json
+{
+  "type": "guess", 
+  "ok": false, 
+  "message": "Invalid input"
+}
+```
+
+**Error Response(s): Already guessed**
+```json
+{
+  "type": "guess", 
+  "ok": false, 
+  "message": "Letter 'a' was already guessed"
+}
+```
+**Error Response(s): No Game**
+```json
+{
+    "type": "guess",
+    "ok": false,
+    "message ": "No active game"
+}
+```
+
+---
+
+### 4. Game State
+
+**Request:**
+```json
+{
+    "type": "state"
+}
+```
+
+**Success Response:**
+```json
+{
+    "type": "state",
+    "ok": true,
+    "message": "hangmanString",
+    "hiddenWord": "a_a__",
+    "lives": 6,
+    "misses": 2,
+    "points": 8
+}
+```
+
+**Error Response(s): No Game**
+```json
+{
+    "type": "state",
+    "ok": false,
+    "message ": "No active game"
+}
+```
+
+---
+
+### 5. Win/Loss Detection
+
+**Win Response:**
+```json
+{
+    "type": "guess",
+    "ok": true,
+    "correct": true,
+    "gameOver": true,
+    "result": "win",
+    "message": "hangmanString",
+    "hiddenWord": "array",
+    "lives": 3,
+    "misses": 3,
+    "points": 22,
+    "solution": "array"
+}
+```
+
+**Lose Response:**
+```json
+{
+    "type": "guess",
+    "ok": true,
+    "correct": false,
+    "gameOver": true,
+    "result": "loss",
+    "message": "hangmanString",
+    "hiddenWord": "a__ay",
+    "lives": 0,
+    "misses": 6,
+    "points": 9,
+    "solution": "array"
+}
+```
+
+---
+
+### 6. Hint Feature
+
+**Request:**
+```json
+{
+    "type": "hint"
+}
+```
+
+**Success Response:**
+```json
+{
+    "type": "hint",
+    "ok": true,
+    "message": "hangmanString",
+    "hiddenWord": "a_a__",
+    "hintLetter": "y",
+    "lives": 6,
+    "misses": 0, 
+    "points": 2
+}
+```
+
+**Error Response(s): No Game**
+```json
+{
+    "type": "hint",
+    "ok": false,
+    "message ": "No active game"
+}
+```
+
+---
+
+### 7. Guessed Letters
+
+**Request:**
+```json
+{
+    "type": "guessed"
+}
+```
+
+**Success Response:**
+```json
+{
+    "type": "guessed",
+    "ok": true,
+    "guessedLetters": ["a","e","j","v"]
+}
+```
+
+**Error Response(s): No Game**
+```json
+{
+    "type": "guessed",
+    "ok": false,
+    "message ": "No active game"
+}
+```
+---
+
+### 8. Give Up
+
+**Request:**
+```json
+{
+    "type": "giveup"
+}
+```
+
+**Success Response:**
+```json
+{
+    "type": "giveup",
+    "ok": true,
+    "message": "You gave up!The word was: ",
+    "solution": "array",
+    "doom": "ASCIIART"
+}
+```
+
+**Error Response(s): No Game**
+```json
+{
+    "type": "giveup",
+    "ok": false,
+    "message ": "No active game"
+}
+```
+---
 ## Error Handling Strategy
 
 [Explain your approach to error handling:]
 
 **Server-side validation:**
 - [What validations does your server perform?]
-  <Your answer>
+- The server checks every request for a valid type field or required fields like letter or word before doing anything
 
 - [How do you handle missing fields?]
-  <Your answer>
+- If a required field is missing, the server uses testField() to return ok: false with a message explaining which field is missing, without touching any game state
 
 - [How do you handle invalid data types?]
-  <Your answer>
+- If the data is the wrong type, the server checks with Character.isLetter() and returns an error message before going.
 
 - [How do you handle game state errors?]
-  <Your answer>
+- If someone sends a guess when no game is running, the handler checks inGame first and immediately returns an error.
 
 ---
 
@@ -150,15 +413,15 @@ The video demonstrates:
 
 **Server robustness:**
 - [How does server handle invalid input without crashing?]
-- <Your answer>
+- The server wraps readObject() in a try-catch so if a client sends corrupted data, the server just moves on to the next connection instead of crashing.
 
 
 **Client robustness:**
 - [How does client handle unexpected responses?]
-- <Your answer>
+- Every response is null-checked before reading any fields, so a bad response just prints an error message instead of crashing the client.
 
 - [What happens if server is unavailable?]
-- <Your answer>
+- If the server goes down midgame, the catch block in sendRequest sets inGame = false so the client returns to the main menu cleanly.
 
 ---
 
@@ -166,9 +429,7 @@ The video demonstrates:
 
 [List any assumptions you made about the protocol or game rules]
 
-1. [Assumption 1]
-2. [Assumption 2]
-3. [etc.]
+1. Same player name means same player for leaderboard tracking.
 
 ---
 
@@ -176,7 +437,7 @@ The video demonstrates:
 
 [List any known bugs or limitations]
 
-1. [Issue 1]
-2. [Issue 2]
+1. The leaderboard resets when the server restarts since it is stored in memory only.
+2. Guesses dont lose lives
 
 ---

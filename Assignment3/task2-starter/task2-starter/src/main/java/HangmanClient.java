@@ -6,18 +6,7 @@ import java.io.*;
 import java.util.Scanner;
 
 /**
- * Hangman Game Client - Student Starter Code
- *
- * Your task: Implement the protocol communication for all game features.
- *
- * What's provided:
- * - Complete menu structure with different game states
- * - Name handling as a complete example
- * - Some method stubs as examples
- *
- * What you need to implement:
- * - Protocol requests/responses for all game operations
- * - Proper response handling and display
+ * Hangman Game Client - Farbotnik
  */
 public class HangmanClient {
     static Socket sock;
@@ -43,9 +32,9 @@ public class HangmanClient {
             oos = new ObjectOutputStream(sock.getOutputStream());
             in = new ObjectInputStream(sock.getInputStream());
 
-            System.out.println("╔════════════════════════════════════════╗");
-            System.out.println("║     WELCOME TO HANGMAN GAME!           ║");
-            System.out.println("╚════════════════════════════════════════╝");
+            System.out.println("---------------------------------------");
+            System.out.println("|     WELCOME TO HANGMAN GAME!        |");
+            System.out.println("---------------------------------------");
             System.out.println();
 
             boolean running = true;
@@ -70,10 +59,10 @@ public class HangmanClient {
      * Initial menu - before name is set
      */
     static boolean showInitialMenu() {
-        System.out.println("────────────────────────────────────────");
+        System.out.println("---------------------------------------");
         System.out.println("  1. Set Your Name");
         System.out.println("  2. Quit");
-        System.out.println("────────────────────────────────────────");
+        System.out.println("---------------------------------------");
         System.out.print("Enter choice: ");
 
         String choice = scanner.nextLine().trim();
@@ -94,12 +83,12 @@ public class HangmanClient {
      * Main menu - after name set, no active game
      */
     static boolean showMainMenu() {
-        System.out.println("────────────────────────────────────────");
+        System.out.println("---------------------------------------");
         System.out.println("MAIN MENU:");
         System.out.println("  1. Start New Game");
         System.out.println("  2. View Leaderboard");
         System.out.println("  3. Quit");
-        System.out.println("────────────────────────────────────────");
+        System.out.println("---------------------------------------");
         System.out.print("Enter choice: ");
 
         String choice = scanner.nextLine().trim();
@@ -108,7 +97,7 @@ public class HangmanClient {
                 startGame();
                 return true;
             case "2":
-                // TODO: implement me
+                showLeaderboard();
                 return true;
             case "3":
                 quit();
@@ -125,7 +114,7 @@ public class HangmanClient {
      * Commands: 1, 2, 3, 4, 0 for special actions
      */
     static boolean showGameMenu() {
-        System.out.println("\n────────────────────────────────────────");
+        System.out.println("\n---------------------------------------");
         System.out.println("Type a letter or word to guess");
         System.out.println("Or choose:");
         System.out.println("  1 - Show game state");
@@ -133,19 +122,63 @@ public class HangmanClient {
         System.out.println("  3 - Get a hint (-8 points)");
         System.out.println("  4 - Give up (return to main menu)");
         System.out.println("  0 - Quit game");
-        System.out.println("────────────────────────────────────────");
+        System.out.println("---------------------------------------");
         System.out.print("Your input: ");
         String input = scanner.nextLine().trim();
 
         // Handle special commands
         if (input.equals("1")) {
-            // TODO: implement me
+            JSONObject request = new JSONObject();
+            request.put("type", "state");
+            JSONObject response = sendRequest(request);
+            if (response != null) {
+                if (response.getBoolean("ok")) {
+                    System.out.println(response.getString("message")); // hangman art
+                    System.out.println("Word: " + response.getString("hiddenWord"));
+                    System.out.println("Misses: " + response.getInt("misses"));
+                    System.out.println("Lives:" + response.getInt("lives"));
+                    System.out.println("Points:" + response.getInt("points"));
+                } else {
+                    System.out.println("✗ Error: " + response.getString("message"));
+                }
+            }
             return true;
         } else if (input.equals("2")) {
-            // TODO: implement me
+            JSONObject request = new JSONObject();
+            request.put("type", "guessed");
+            JSONObject response = sendRequest(request);
+            if (response != null) {
+                if (response.getBoolean("ok")) {
+                    JSONArray letters = response.getJSONArray("guessedLetters");
+                    if (letters.length() == 0) {
+                        System.out.println("No letters guessed yet.");
+                    } else {
+                        String display = "";
+                        for (int i = 0; i < letters.length(); i++) {
+                            if (i > 0) display += ", ";
+                            display += letters.getString(i);
+                        }
+                        System.out.println("Guessed letters: " + display);
+                    }
+                } else {
+                    System.out.println("✗ Error: " + response.getString("message"));
+                }
+            }
             return true;
         } else if (input.equals("3")) {
-            // TODO: implement me
+            JSONObject request = new JSONObject();
+            request.put("type", "hint");
+            JSONObject response = sendRequest(request);
+            if (response != null) {
+                if (response.getBoolean("ok")) {
+                    System.out.println(response.getString("message")); // hangman art
+                    System.out.println("Hint: the word contains '" + response.getString("hintLetter") + "'");
+                    System.out.println("Word: " + response.getString("hiddenWord"));
+                    System.out.println("Lives: " + response.getInt("lives") + "  Misses: " + response.getInt("misses") + "  Points: " + response.getInt("points"));
+                } else {
+                    System.out.println("✗ Error: " + response.getString("message"));
+                }
+            }
             return true;
         } else if (input.equals("4")) {
             giveUp();
@@ -162,16 +195,79 @@ public class HangmanClient {
 
         // Single character = letter guess, multiple = word guess
         if (input.length() == 1) {
-            // TODO: implement me
+            // happy case 1 word guess
+            JSONObject request = new JSONObject();
+            request.put("type", "guess");
+            request.put("letter", input);
+            JSONObject response = sendRequest(request);
+            if (response != null) {
+                if (response.getBoolean("ok")) {
+                    System.out.println(response.getString("message")); // hangman art
+                    System.out.println("Word: " + response.getString("hiddenWord"));
+                    System.out.println("Lives: " + response.getInt("lives") + "  Misses: " + response.getInt("misses") + "  Points: " + response.getInt("points"));
+                    if (response.getBoolean("correct")) {
+                        System.out.println("Good guess!");
+                    } else {
+                        System.out.println("Wrong guess!");
+                    }
+                    if (response.getBoolean("gameOver")) {
+                        try {
+                            System.out.println("Solution: " + response.getString("solution"));
+                            if (response.getString("result").equals("win")) {
+                                System.out.println("You win! Final score: " + response.getInt("points"));
+                            } else {
+                                System.out.println("Game over! The word was: " + response.getString("solution"));
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Game over!");
+                        }
+                        inGame = false;
+                    }
+                } else {
+                    System.out.println("✗ Error: " + response.getString("message"));
+                }
+            }
         } else {
-            // TODO: implement me
-        }
+            // handles word inputs
+            JSONObject request = new JSONObject();
+            request.put("type", "guess");
+            request.put("word", input);
 
+            JSONObject response = sendRequest(request);
+            if (response != null) {
+                if (response.getBoolean("ok")) {
+                    System.out.println(response.getString("message")); // hangman art
+                    System.out.println("Word: " + response.getString("hiddenWord"));
+                    System.out.println("Lives: " + response.getInt("lives") + "  Misses: " + response.getInt("misses") + "  Points: " + response.getInt("points"));
+
+                    if (response.getBoolean("correct")) {
+                        System.out.println("Correct! You guessed the word!");
+                    } else {
+                        System.out.println("Wrong word! -2");
+                    }
+                    if (response.getBoolean("gameOver")) {
+                        try {
+                            System.out.println("Solution: " + response.getString("solution"));
+                            if (response.getString("result").equals("win")) {
+                                System.out.println("You win! Final score: " + response.getInt("points"));
+                            } else {
+                                System.out.println("Game over! The word was: " + response.getString("solution"));
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Game over!");
+                        }
+                        inGame = false;
+                    }
+                } else {
+                    System.out.println("✗ Error: " + response.getString("message"));
+                }
+            }
+            return true;
+        }
         return true;
     }
 
     /**
-     * TODO: Implement the rest
      * IMPORTANT: This should send a request to the server to end the game!
      * Just setting inGame = false locally creates a state mismatch
      * where the client thinks the game is over but the server still has it active.
@@ -187,19 +283,26 @@ public class HangmanClient {
         System.out.print("\nAre you sure you want to give up? (yes/no): ");
         String confirm = scanner.nextLine().trim().toLowerCase();
         if (confirm.equals("yes") || confirm.equals("y")) {
-            // TODO: Send request to server to properly end the game
-            inGame = false;
             System.out.println("\nYou gave up! Returning to main menu...\n");
-            System.out.println("[TODO: This should notify the server to end the game properly]");
+            JSONObject request = new JSONObject();
+            request.put("type", "giveup");
+            JSONObject response = sendRequest(request);
+            if (response != null) {
+                if (response.getBoolean("ok")) {
+                    System.out.println(response.getString("doom")); //cat
+                    System.out.println(response.getString("message"));
+                    inGame = false;
+                } else {
+                    System.out.println("✗ Error: " + response.getString("message"));
+                }
+            }
         } else {
             System.out.println("\nContinuing game...");
         }
     }
 
     /**
-     * EXAMPLE IMPLEMENTATION: Set player name
-     * This is provided as a complete example.
-     * Use this as a reference for implementing other methods.
+     * Set player name
      */
     static void setName() {
         System.out.print("\nEnter your name: ");
@@ -225,13 +328,63 @@ public class HangmanClient {
     }
 
     /**
-     * TODO: Implement start game
+     * Start game
      * Should send a start request to the server and handle the response
      */
     static void startGame() {
-        System.out.println("\n[TODO: Implement start game - send start request to server]");
+        System.out.println("\n[Start game - send start request to server]");
+        JSONObject request = new JSONObject();
+        request.put("type", "start");
+        JSONObject response = sendRequest(request);
+        if (response != null) {
+            if (response.getBoolean("ok")) {
+                inGame = true;
+                System.out.println(response.getString("message"));   // hangman art
+                System.out.println("Word: " + response.getString("hiddenWord")
+                        + "  (" + response.getInt("wordLength") + " letters)");
+                System.out.println("Lives: " + response.getInt("lives"));
+                System.out.println("Points: " + response.getInt("points"));
+                System.out.println();
+            } else {
+                System.out.println("✗ Error: " + response.getString("message"));
+            }
+        }
+        
     }
 
+    /**
+     * Should send a leaderboard request to the server and handle the response
+     */
+    static void showLeaderboard() {
+        JSONObject request = new JSONObject();
+        request.put("type", "leaderboard");
+        JSONObject response = sendRequest(request);
+        if (response != null) {
+            if (response.getBoolean("ok")) {
+                JSONArray entries = response.getJSONArray("entries");
+                if (entries.length() == 0) {
+                    System.out.println("No games played yet.");
+                } else {
+                    System.out.println("Rank | Name         | Best | Avg  | Win% | Played");
+                    System.out.println("--------------------------------------------------");
+                    for (int i = 0; i < entries.length(); i++) {
+                        JSONObject entry = entries.getJSONObject(i);
+                        System.out.println(entry.getInt("rank") + " | " +
+                                entry.getString("name") + " | " +
+                                entry.getInt("bestScore") + " | " +
+                                entry.getDouble("avgScore") + " | " +
+                                entry.getDouble("winPct") + "% | " +
+                                entry.getInt("gamesPlayed")
+                        );
+                    }
+                }
+                System.out.println("---------------------------------------");
+            } else {
+                System.out.println("✗ Error: " + response.getString("message"));
+            }
+        }
+        
+    }
 
     /**
      * Quit game
