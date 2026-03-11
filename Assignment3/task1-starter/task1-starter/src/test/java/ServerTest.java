@@ -250,4 +250,77 @@ public class ServerTest {
         addRequest();
     }
 
+    @Test
+    public void analyzer1() throws Exception {
+        JSONObject req = new JSONObject();
+        req.put("type", "analyzer");
+        req.put("action", "search");
+        req.put("text", "abcdefss");
+        req.put("find", "");
+        os.writeObject(req.toString());
+        os.flush();
+
+        String i = (String) in.readUTF();
+        JSONObject res = new JSONObject(i);
+        System.out.println(res);
+    }
+    @Test
+    public void analyzerWordCount() throws Exception {
+        JSONObject req = new JSONObject();
+        req.put("type", "analyzer");
+        req.put("action", "wordcount");
+        req.put("text", "abcdef ss");
+        os.writeObject(req.toString());
+        os.flush();
+
+        String i = (String) in.readUTF();
+        JSONObject res = new JSONObject(i);
+        System.out.println(res);
+
+        assertTrue(res.getBoolean("ok"));
+        assertEquals("analyzer", res.getString("type"));
+        assertEquals("wordcount", res.getString("action"));
+        assertEquals(2, res.getInt("count"));
+    }
+
+    @Test
+    public void analyzerCharCount() throws Exception {
+        JSONObject req = new JSONObject();
+        req.put("type", "analyzer");
+        req.put("action", "charcount");
+        req.put("text", "abcdef ss");
+        os.writeObject(req.toString());
+        os.flush();
+        String i = (String) in.readUTF();
+        JSONObject res = new JSONObject(i);
+        System.out.println(res);
+
+        assertTrue(res.getBoolean("ok"));
+        assertEquals("analyzer", res.getString("type"));
+        assertEquals("charcount", res.getString("action"));
+        assertEquals(9, res.getInt("count"));
+    }
+
+    @Test
+    public void analyzerSearch() throws Exception {
+        JSONObject req = new JSONObject();
+        req.put("type", "analyzer");
+        req.put("action", "search");
+        req.put("text", "abcdef ss");
+        req.put("find", "f");
+        os.writeObject(req.toString());
+        os.flush();
+        String i = (String) in.readUTF();
+        JSONObject res = new JSONObject(i);
+        System.out.println(res);
+
+        assertTrue(res.getBoolean("ok"));
+        assertEquals("analyzer", res.getString("type"));
+        assertEquals("search", res.getString("action"));
+        assertEquals("f", res.getString("find"));
+        assertTrue(res.getBoolean("found"));
+        assertEquals(1, res.getInt("count"));
+        assertEquals(5, res.getJSONArray("positions").getInt(0));
+    }
+
 }
