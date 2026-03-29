@@ -1,1 +1,14 @@
 Assignment1/logs.txt
+# Gradle
+.gradle/
+build/
+
+# IntelliJ 
+.idea/
+*.iml
+
+# OS junk
+__MACOSX/
+*.DS_Store
+*.zip
+bin/
