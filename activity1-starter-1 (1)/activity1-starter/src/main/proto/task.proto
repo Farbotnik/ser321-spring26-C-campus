@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "taskone.proto";
+
+/**
+ * Task Management Protocol - Protocol Buffers Version
+ *
+ * The server currently uses JSON protocol. You need to design
+ * a Protobuf version that supports the same operations:
+ * - add: Add a new task
+ * - list: List tasks with filter
+ * - finish: Mark task as finished
+ * - quit: Disconnect from server
+ *
+ * Study the JSON protocol in the README.md, Performer.java and Client.java to understand
+ * what fields are needed for each request and response. You do not have to build the exact same things, some fields could be different
+ * but the general information should be the same.
+ */
+
+// ========== REQUEST MESSAGES ==========
+
+/**
+ * Main request message sent from client to server.
+ *
+ * TODO: Complete this message definition.
+ * Hint: Look at how Client.java builds JSON requests and at the README.
+ */
+message Request {
+  enum RequestType {
+    UNKNOWN = 0;
+    ADD = 1;
+    LIST = 2;
+    FINISH = 3;
+    QUIT = 4;
+
+  }
+  RequestType type = 1;
+
+  // TODO: Add fields needed for different request types
+}
+
+// ========== RESPONSE MESSAGES ==========
+
+/**
+ * Main response message sent from server to client.
+ *
+ * TODO: Complete this message definition.
+ * Hint: Look at how Server.java builds JSON responses and at the README.
+ */
+message Response {
+  enum ResponseType {
+    UNKNOWN = 0;
+    SUCCESS = 1;
+    ERROR = 2;
+  }
+
+  ResponseType type = 1;
+  string message = 2;
+
+  // TODO: Add fields for response data
+  // Hint: Different responses need different data:
+
+  // Add your fields here:
+
+}
+
+// ========== DATA MESSAGES ==========
+
+/**
+ * Represents a single task.
+ *
+ * TODO: Complete this message definition.
+ * Hint: Look at Task.java to see what fields a task has.
+ */
+message TaskProto {
+  // TODO: Add all task fields
+
+  // Add your fields here:
+  int32 id = 1;
+  // ... add more fields
+}
+
+/**
+ * List of tasks (for LIST response).
+ *
+ * TODO: Complete this message definition if needed.
+ */
+message TaskList {
+  repeated TaskProto tasks = 1;
+  int32 count = 2;
+}

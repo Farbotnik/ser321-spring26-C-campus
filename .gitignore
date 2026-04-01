@@ -2,6 +2,9 @@ Assignment1/logs.txt
 # Gradle
 .gradle/
 build/
+**/.gradle/
+**/build/
+*.class
 
 # IntelliJ 
 .idea/
