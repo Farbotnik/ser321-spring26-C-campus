@@ -59,7 +59,7 @@ public class LeaderboardManager {
      * Add a score to the leaderboard.
      * Returns the rank (1-based) of the added score.
      */
-    public int addScore(String playerName, int score) {
+    public synchronized int addScore(String playerName, int score) {
         ScoreEntry entry = new ScoreEntry(playerName, score, LocalDateTime.now());
         scores.add(entry);
         Collections.sort(scores);
@@ -79,7 +79,7 @@ public class LeaderboardManager {
     /**
      * Get top N scores.
      */
-    public List<LeaderboardEntry> getTopScores(int n) {
+    public synchronized List<LeaderboardEntry> getTopScores(int n) {
         List<LeaderboardEntry> result = new ArrayList<>();
 
         int count = Math.min(n, scores.size());
@@ -100,7 +100,7 @@ public class LeaderboardManager {
     /**
      * Get total number of scores.
      */
-    public int size() {
+    public synchronized int size() {
         return scores.size();
     }
 

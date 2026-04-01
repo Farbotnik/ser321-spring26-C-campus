@@ -73,6 +73,19 @@ task runClient(type: JavaExec) {
     }
 }
 
+// Task for threaded server
+task runThreadedServer(type: JavaExec) {
+    group = 'application'
+    description = 'Run a Multithreaded Server'
+    mainClass = 'taskone.ThreadedServer'
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    // Allow passing port as argument
+    if (project.hasProperty('port')) {
+        args project.property('port')
+    }
+}
+
 // Default application main class
 application {
     mainClass = 'taskone.Server'

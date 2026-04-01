@@ -1,13 +1,27 @@
 package auction;
 
-import buffers.*;
-
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import buffers.AuctionItem;
+import buffers.AuctionResult;
+import buffers.GameResult;
+import buffers.Leaderboard;
+import buffers.PlayerBid;
+import buffers.PlayerStatus;
+import buffers.Request;
+import buffers.Response;
 
 /**
  * Auction Game Server - Players compete against bot opponents.
@@ -23,7 +37,7 @@ public class AuctionServer {
     private static LeaderboardManager leaderboard;
 
     // Track connected player names (to prevent duplicates)
-    private static Set<String> activePlayerNames = new HashSet<>();
+    private static Set<String> activePlayerNames = Collections.synchronizedSet(new HashSet<>());
 
     // Grading mode flag
     private static boolean gradingMode = false;
@@ -58,94 +72,153 @@ public class AuctionServer {
         System.out.println("Leaderboard loaded with " + leaderboard.size() + " scores");
 
 
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Auction Server started on port " + port);
             System.out.println("Waiting for connections...");
 
             int clientId = 0;
-            while (true) {
+            for (;;) { // I saw a video where linus uses this I wanted to try it in a project.
                 try {
                     Socket clientSocket = serverSocket.accept();
                     clientId++;
-                    final int id = clientId;
-                    System.out.println("Client " + id + " connected from " +
+                    System.out.println("Client " + clientId + " connected from " +
                             clientSocket.getInetAddress().getHostAddress());
 
-                    processConnection(clientSocket, id);
+                    threadPool.submit(new ClientHandler(clientSocket, port, clientId));
                 } catch (IOException e) {
                     System.err.println("Error accepting client: " + e.getMessage());
                 }
             }
         } catch (IOException e) {
             System.err.println("Server error: " + e.getMessage());
+        } finally {
+            threadPool.shutdown();
         }
     }
 
     /**
-     * Handle a client connection (runs in thread pool).
+     * Worker thread that handles one client connection
      */
-    private static void processConnection(Socket clientSocket, int clientId) {
-        String playerName = null;
-        PlayerGameState gameState = null;
+    private static class ClientHandler implements Runnable {
+        private final Socket clientSocket;
+        private final int port;
+        private final int clientId;
+        private PlayerGameState gameState;
 
-        try (InputStream in = clientSocket.getInputStream();
-             OutputStream out = clientSocket.getOutputStream()) {
+        ClientHandler(Socket clientSocket, int port, int clientId) {
+            this.clientSocket = clientSocket;
+            this.port = port;
+            this.clientId = clientId;
+            this.gameState = null;
+        }
 
-            System.out.println("[Client " + clientId + "] Handler started");
+        @Override
+        public void run() {
+            String playerName = null;
 
-            // Send initial welcome
-            sendWelcome(out, "Welcome to the Auction Game! Please set your name.");
+            try (InputStream in = clientSocket.getInputStream();
+                 OutputStream out = clientSocket.getOutputStream()) {
 
-            // Read and process requests
-            Request request;
-            while ((request = Request.parseDelimitedFrom(in)) != null) {
-                Request.RequestType type = request.getType();
-                System.out.println("[Client " + clientId + "] Received: " + type);
+                System.out.println("[Client " + clientId + "] Handler started on port " + port);
 
-                Response response = null;
+                // Send initial welcome
+                sendWelcome(out, "Welcome to the Auction Game! Please set your name.");
 
-                switch (type) {
-                    case REGISTER:
-                        String[] result = handleRegister(request, playerName);
-                        playerName = result[0];
-                        String message = result[1];
-                        if (playerName != null) {
-                            response = buildWelcome("Welcome, " + playerName + "! You have " + initialGold + " gold. " +
-                                    "Type 'join' to start playing against bot opponents!");
-                        } else {
-                            response = buildError(message);
-                        }
-                        break;
-                    case QUIT:
-                        response = handleQuit(gameState);
-                        if (response != null) {
-                            response.writeDelimitedTo(out);
-                        }
-                        return; // Exit handler
+                // Read and process requests
+                Request request;
+                while ((request = Request.parseDelimitedFrom(in)) != null) {
+                    Request.RequestType type = request.getType();
+                    System.out.println("[Client " + clientId + "] Received: " + type);
 
-                    default:
-                        response = buildError("Unknown request type");
+                    Response response = null;
+
+                    switch (type) {
+                        case REGISTER:
+                            String[] result = handleRegister(request, playerName);
+                            playerName = result[0];
+                            String message = result[1];
+                            if (playerName != null) {
+                                response = buildWelcome("Welcome, " + playerName + "! You have " + initialGold + " gold. " +
+                                        "Type 'join' to start playing against bot opponents!");
+                            } else {
+                                response = buildError(message);
+                            }
+                            break;
+                        case BID:
+                            if (gameState == null) {
+                                response = buildError("You must join a game first");
+                            } else {
+                                String bidError = gameState.validateBid(request.getItemId(), request.getBidAmount());
+                                if (bidError != null) {
+                                    response = buildError(bidError);
+                                } else {
+                                    Response bidResult = handleBid(request, gameState);
+                                    bidResult.writeDelimitedTo(out);
+                                    if (!bidResult.hasNextItem()) {
+                                        int rank = leaderboard.addScore(gameState.getPlayerName(), gameState.getPlayerScore());
+                                        gameOverResponse(gameState, rank).writeDelimitedTo(out);
+                                        gameState = null;
+                                    }
+                                    response = null;
+                                }
+                            }
+                            break;
+
+                        case JOIN:
+                            if (playerName == null) {
+                                response = buildError("Please set your name first");
+                            } else if (gameState != null) {
+                                response = buildError("You are already in a game");
+                            } else {
+                                gameState = new PlayerGameState(playerName, gradingMode);
+                                response = handleJoin(gameState);
+                            }
+                            break;
+
+                        case LEADERBOARD:
+                            response = Response.newBuilder()
+                                    .setType(Response.ResponseType.LEADERBOARD_RESPONSE)
+                                    .setOk(true)
+                                    .setMessage("Top 10 Scores:")
+                                    .setLeaderboard(Leaderboard.newBuilder()
+                                            .addAllEntries(leaderboard.getTopScores(10))
+                                            .build())
+                                    .build();
+                            break;
+
+                        case QUIT:
+                            response = handleQuit(gameState);
+                            if (response != null) {
+                                response.writeDelimitedTo(out);
+                            }
+                            return; // Exit handler
+
+                        default:
+                            response = buildError("Unknown request type");
+                    }
+
+                    if (response != null) {
+                        response.writeDelimitedTo(out);
+                    }
                 }
 
-                if (response != null) {
-                    response.writeDelimitedTo(out);
-                }
-            }
+                System.out.println("[Client " + clientId + "] Disconnected");
 
-            System.out.println("[Client " + clientId + "] Disconnected");
-
-        } catch (IOException e) {
-            System.err.println("[Client " + clientId + "] Error: " + e.getMessage());
-        } finally {
-            // Cleanup
-            if (playerName != null) {
-                activePlayerNames.remove(playerName);
-                System.out.println("[Client " + clientId + "] Removed player: " + playerName);
-            }
-            try {
-                clientSocket.close();
             } catch (IOException e) {
-                // Ignore
+                System.err.println("[Client " + clientId + "] Error: " + e.getMessage());
+            } finally {
+                // Cleanup
+                if (playerName != null) {
+                    activePlayerNames.remove(playerName);
+                    System.out.println("[Client " + clientId + "] Removed player: " + playerName);
+                }
+                try {
+                    clientSocket.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
             }
         }
     }
@@ -168,6 +241,177 @@ public class AuctionServer {
         // Add new name
         activePlayerNames.add(name);
         return new String[]{name, null};
+    }
+
+    /**
+     * Handle JOIN request
+     */
+    private static Response handleJoin(PlayerGameState gameState) {
+        BotOpponent b1 = gameState.getBot1();
+        BotOpponent b2 = gameState.getBot2();
+        BotOpponent b3 = gameState.getBot3();
+
+        String msg = "Game started! You're playing against " +
+                b1.getName() + ", " + b2.getName() + ", and " + b3.getName() + ". Current item:";
+        PlayerStatus playerStatus = PlayerStatus.newBuilder()
+                .setGoldRemaining(gameState.getGold())
+                .build();
+
+        return Response.newBuilder()
+                .setType(Response.ResponseType.GAME_JOINED)
+                .setOk(true)
+                .setMessage(msg)
+                .setPlayerStatus(playerStatus)
+                .setNextItem(itemToProto(gameState.getCurrentItem()))
+                .build();
+    }
+
+    /**
+     * Handle BID request
+     */
+    private static Response handleBid(Request request, PlayerGameState gameState) {
+        Item item = gameState.getCurrentItem();
+        int reservePrice = item.getMinValue() / 2;
+        int playerBid = request.getBidAmount();
+        int effectiveBid;
+
+        if (playerBid == -1) {
+            effectiveBid = 0;
+        } else {
+            effectiveBid = playerBid;
+        }
+
+        BotOpponent b1 = gameState.getBot1();
+        BotOpponent b2 = gameState.getBot2();
+        BotOpponent b3 = gameState.getBot3();
+
+        String[] names = { gameState.getPlayerName(), b1.getName(), b2.getName(), b3.getName() };
+        int[] bids = { effectiveBid, b1.decideBid(item, reservePrice), b2.decideBid(item, reservePrice), b3.decideBid(item, reservePrice) };
+
+        // highest bid >= reserve ties
+        String winnerName = "(unsold)";
+        int winningBid = 0;
+        for (int i = 0; i < names.length; i++) {
+            if (bids[i] < reservePrice) continue;
+            if (bids[i] > winningBid) {
+                winnerName = names[i];
+                winningBid = bids[i];
+            } else if (bids[i] == winningBid && names[i].compareTo(winnerName) < 0) {
+                winnerName = names[i];
+                winningBid = bids[i];
+            }
+        }
+        if (winnerName.equals(gameState.getPlayerName())) {
+            gameState.awardItemToPlayer(item, winningBid);
+        } else if (winnerName.equals(b1.getName())) {
+            b1.awardItem(item, bids[1]);
+        } else if (winnerName.equals(b2.getName())) {
+            b2.awardItem(item, bids[2]);
+        } else if (winnerName.equals(b3.getName())) {
+            b3.awardItem(item, bids[3]);
+        } 
+        List<PlayerBid> allBids = new ArrayList<>();
+        for (int i = 0; i < names.length; i++) {
+            allBids.add(PlayerBid.newBuilder().setPlayerName(names[i]).setBidAmount(bids[i]).build());
+        }
+
+        AuctionResult result = AuctionResult.newBuilder()
+                .setItem(itemToProto(item))
+                .setActualValue(item.getActualValue())
+                .setWinnerName(winnerName)
+                .setWinningBid(winningBid)
+                .addAllAllBids(allBids)
+                .build();
+
+        // bidding now
+        boolean hasMore = gameState.moveToNextItem();
+        String bidMessage;
+
+        if (hasMore) {
+            bidMessage = "Auction complete!";
+        } else {
+            bidMessage = "Auction complete! Calculating final scores...";
+        }
+
+        Response.Builder builder = Response.newBuilder()
+                .setType(Response.ResponseType.BID_RESULT)
+                .setOk(true)
+                .setMessage(bidMessage)
+                .setResult(result)
+                .setPlayerStatus(PlayerStatus.newBuilder().setGoldRemaining(gameState.getGold()).build());
+
+        if (hasMore) {
+            builder.setNextItem(itemToProto(gameState.getCurrentItem()));
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * Makes GAME_OVER response
+     */
+    private static Response gameOverResponse(PlayerGameState gameState, int rank) {
+        BotOpponent b1 = gameState.getBot1();
+        BotOpponent b2 = gameState.getBot2();
+        BotOpponent b3 = gameState.getBot3();
+
+        PlayerStatus[] scores = {
+            PlayerStatus.newBuilder()
+                .setPlayerName(gameState.getPlayerName())
+                .setGoldRemaining(gameState.getGold())
+                .setItemsValue(gameState.getInventoryValue())
+                .setTotalScore(gameState.getPlayerScore())
+                .addAllItemsWon(gameState.getItemNames())
+                .build(),
+            PlayerStatus.newBuilder()
+                .setPlayerName(b1.getName())
+                .setGoldRemaining(b1.getGold())
+                .setItemsValue(b1.getInventoryValue())
+                .setTotalScore(b1.getTotalScore())
+                .addAllItemsWon(b1.getItemNames())
+                .build(),
+            PlayerStatus.newBuilder()
+                .setPlayerName(b2.getName())
+                .setGoldRemaining(b2.getGold())
+                .setItemsValue(b2.getInventoryValue())
+                .setTotalScore(b2.getTotalScore())
+                .addAllItemsWon(b2.getItemNames())
+                .build(),
+            PlayerStatus.newBuilder()
+                .setPlayerName(b3.getName())
+                .setGoldRemaining(b3.getGold())
+                .setItemsValue(b3.getInventoryValue())
+                .setTotalScore(b3.getTotalScore())
+                .addAllItemsWon(b3.getItemNames())
+                .build()
+        };
+        String gameWinner = scores[0].getPlayerName();
+        int topScore = scores[0].getTotalScore();
+
+        // finding winner
+        for (PlayerStatus s : scores) {
+            if (s.getTotalScore() > topScore) {
+                gameWinner = s.getPlayerName();
+                topScore = s.getTotalScore();
+            } else if (s.getTotalScore() == topScore && s.getPlayerName().compareTo(gameWinner) < 0) {
+                gameWinner = s.getPlayerName();
+                topScore = s.getTotalScore();
+            }
+        }
+        GameResult gameResult = GameResult.newBuilder()
+                .addAllPlayerScores(java.util.Arrays.asList(scores))
+                .setWinnerName(gameWinner)
+                .setLeaderboardPosition(rank)
+                .build();
+
+
+
+        return Response.newBuilder()
+                .setType(Response.ResponseType.GAME_OVER)
+                .setOk(true)
+                .setMessage("Game over! Final results:")
+                .setGameResult(gameResult)
+                .build();
     }
 
     /**

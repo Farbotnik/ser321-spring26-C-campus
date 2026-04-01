@@ -150,6 +150,99 @@ public class ProtocolTest {
     // ADD YOUR TESTS BELOW (at least 3 more tests required)
     // ====================================================================
 
+    /**
+     * Test 5: JOIN Request
+     * After registering, JOIN should return GAME_JOINED with first item and player gold.
+     */
+    @Test
+    @Order(5)
+    public void testJoinStartsGame() throws IOException {
+        Response.parseDelimitedFrom(in); // initial welcome
+        sendRegister("JoinTester");
+
+        sendJoin();
+        Response response = Response.parseDelimitedFrom(in);
+
+        assertNotNull(response, "Server should respond to JOIN");
+        assertEquals(Response.ResponseType.GAME_JOINED, response.getType(),
+            "JOIN should return GAME_JOINED");
+        assertTrue(response.getOk(), "GAME_JOINED should have ok=true");
+        assertTrue(response.hasNextItem(), "GAME_JOINED should include first item");
+        assertTrue(response.hasPlayerStatus(), "GAME_JOINED should include player_status");
+        assertEquals(150, response.getPlayerStatus().getGoldRemaining(),
+            "Player should start with 150 gold");
+        assertTrue(response.getNextItem().getReservePrice() > 0,
+            "First item should have a reserve price");
+    }
+
+    /**
+     * Test 6: BID with -1 (skip) — bots still compete, BID_RESULT returned
+     */
+    @Test
+    @Order(6)
+    public void testSkipBid() throws IOException {
+        Response.parseDelimitedFrom(in); // initial welcome
+        sendRegister("SkipTester");
+
+        sendJoin();
+        Response joined = Response.parseDelimitedFrom(in);
+        int firstItemId = joined.getNextItem().getId();
+
+        // Send skip bid (-1)
+        Request skipBid = Request.newBuilder()
+            .setType(Request.RequestType.BID)
+            .setItemId(firstItemId)
+            .setBidAmount(-1)
+            .build();
+        skipBid.writeDelimitedTo(out);
+
+        Response response = Response.parseDelimitedFrom(in);
+
+        assertNotNull(response, "Server should respond to skip bid");
+        assertEquals(Response.ResponseType.BID_RESULT, response.getType(),
+            "Skip bid should return BID_RESULT");
+        assertTrue(response.getOk(), "BID_RESULT should have ok=true");
+        assertTrue(response.hasResult(), "BID_RESULT should include auction result");
+        assertEquals(4, response.getResult().getAllBidsCount(),
+            "All 4 participants (player + 3 bots) should have bids listed");
+        // Player skipped so bots compete — winner should not be the player
+        // (player bid treated as 0, which is below any reserve price)
+        assertTrue(response.hasPlayerStatus(), "BID_RESULT should include updated player_status");
+    }
+
+    /**
+     * Test 7: Reserve price enforced — bid above 0 but below reserve returns ERROR
+     */
+    @Test
+    @Order(7)
+    public void testReservePriceEnforced() throws IOException {
+        Response.parseDelimitedFrom(in); // initial welcome
+        sendRegister("ReserveTester");
+
+        sendJoin();
+        Response joined = Response.parseDelimitedFrom(in);
+        int itemId = joined.getNextItem().getId();
+        int reserve = joined.getNextItem().getReservePrice();
+
+        // Only attempt if reserve > 1 so we can bid below it
+        assertTrue(reserve > 1, "Reserve price should be > 1 for this test to be meaningful");
+
+        Request lowBid = Request.newBuilder()
+            .setType(Request.RequestType.BID)
+            .setItemId(itemId)
+            .setBidAmount(1) // guaranteed below reserve
+            .build();
+        lowBid.writeDelimitedTo(out);
+
+        Response response = Response.parseDelimitedFrom(in);
+
+        assertEquals(Response.ResponseType.ERROR, response.getType(),
+            "Bid below reserve price should return ERROR");
+        assertFalse(response.getOk(), "Error response should have ok=false");
+        assertTrue(response.getMessage().toLowerCase().contains("reserve"),
+            "Error should mention reserve price");
+    }
+
 
 
     // Helper methods if you want to use them

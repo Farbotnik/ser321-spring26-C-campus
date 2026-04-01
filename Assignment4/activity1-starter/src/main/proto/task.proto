@@ -22,9 +22,6 @@ option java_package = "taskone.proto";
 
 /**
  * Main request message sent from client to server.
- *
- * TODO: Complete this message definition.
- * Hint: Look at how Client.java builds JSON requests and at the README.
  */
 message Request {
   enum RequestType {
@@ -36,17 +33,16 @@ message Request {
 
   }
   RequestType type = 1;
-
-  // TODO: Add fields needed for different request types
+  string description = 2;
+  string category = 3;
+  string filter = 4;
+  int32 id = 5;
 }
 
 // ========== RESPONSE MESSAGES ==========
 
 /**
  * Main response message sent from server to client.
- *
- * TODO: Complete this message definition.
- * Hint: Look at how Server.java builds JSON responses and at the README.
  */
 message Response {
   enum ResponseType {
@@ -57,34 +53,25 @@ message Response {
 
   ResponseType type = 1;
   string message = 2;
-
-  // TODO: Add fields for response data
-  // Hint: Different responses need different data:
-
-  // Add your fields here:
-
+  TaskProto task = 3;
+  TaskList task_list = 4;
 }
 
 // ========== DATA MESSAGES ==========
 
 /**
  * Represents a single task.
- *
- * TODO: Complete this message definition.
- * Hint: Look at Task.java to see what fields a task has.
  */
 message TaskProto {
-  // TODO: Add all task fields
-
-  // Add your fields here:
   int32 id = 1;
-  // ... add more fields
+  string description = 2;
+  string category = 3;
+  string assignee = 4;
+  bool finished = 5;
 }
 
 /**
  * List of tasks (for LIST response).
- *
- * TODO: Complete this message definition if needed.
  */
 message TaskList {
   repeated TaskProto tasks = 1;

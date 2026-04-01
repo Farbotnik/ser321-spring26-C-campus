@@ -142,3 +142,41 @@ Server: Game over! Final results:
 - Follow the protocol specification exactly
 - Test with multiple concurrent clients
 - Make sure leaderboard persists across server restarts (uses `scores.txt`)
+
+---
+
+## Deliverable answers
+
+### How to Compile / Run
+
+**Compile:**
+```bash
+gradle build
+```
+
+**Start the server:**
+```bash
+gradle runServer
+```
+
+**Start the client:**
+```bash
+gradle runClient
+```
+
+---
+
+### What We Implemented
+- Threading: The game is now threaded, the main thread is always looping waiting for connections while the worker threads handle connnections
+
+- JOIN request: When a player sends JOIN, the server creates a new PlayerGameState with gold, 5 random items, and 3 bot opponents. The server responds with GAME_JOINED and the first item to bid off and the player's current gold.
+
+- BID handler: The server validates each bid done.The server looks at the item ID, enough gold, and meets reserve price. The server picks the winner by highest bid or has to break a tie by name. After all that the item is awarded and gold is deducted. The server responds with BID_RESULT updating the player gold.
+
+- GAME_OVER: When everything has been bid on the server calculates final scores for the player and all 3 bots. The winner has the highest score. Also implemented made use of the Leaderboard manager to save the score to the global leaderboard.
+
+- LEADERBOARD: Returns the top 10 scores from the leaderboard at any time. Scores will percist.
+
+### Decisions and Challenges
+
+Multithreading and understanding the flow of the overall protocol was the main design challenge. Each worker thread owns its own PlayerGameState, bot opponents, and client socket. I did it this way so there is no shared game state between clients aside from leaderboard. Another challenge was making the bot opponents always bid a allowable amount. Their bids are generated inside handleBid method and is done after the player's bid is also allowable for the conditions. This allows things to work without complicating the logic there. Overall the activity1 code did a lot to familiarize myself with what I was supposed to do.
