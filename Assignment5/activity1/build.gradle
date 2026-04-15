@@ -1,0 +1,75 @@
+plugins {
+    id 'java'
+    id "com.google.protobuf" version "0.8.18" apply true
+
+}
+
+description = "Protocol Buffers Socket Example"
+
+repositories {
+    mavenCentral()
+}
+
+// json and protobuf dependencies
+dependencies {
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.18.0'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/java/buffers'
+        }
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.21.1'
+    }
+}
+def host = 'localhost'
+def port = 9099
+def workers = 1
+def id = 'Worker1'
+
+// task reading in the arguments if any given, if not the default from above will be used
+task arguments {
+    if (project.hasProperty("host")) {
+        host = project.getProperty("host")
+    }
+    if (project.hasProperty("port")) {
+        port = project.getProperty("port")
+    }
+    if (project.hasProperty("workers")) {
+        workers = project.getProperty("workers")
+    }
+    if (project.hasProperty("id")) {
+        id = project.getProperty("id")
+    }
+}
+
+//gradle runLeader -Pworkers=3
+task runLeader(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    description = "Run Leader"
+    main = 'client.Leader'
+    standardInput = System.in
+    args host
+    args port
+    args workers
+}
+
+//gradle runWorker -Pid=Worker1
+task runWorker(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    description = "Run Worker"
+    main = 'server.Worker'
+    doFirst {
+        // Derive port from worker number in ID (Worker1 -> 9099, Worker2 -> 9100, etc.)
+        def workerNum = id.replaceAll("[^0-9]", "").toInteger()
+        def workerPort = 9098 + workerNum
+        args workerPort
+        args id
+    }
+}

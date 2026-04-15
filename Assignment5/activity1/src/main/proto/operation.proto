@@ -1,0 +1,28 @@
+syntax = "proto2";
+package operation;
+
+option java_package = "buffers";
+option java_outer_classname = "OperationProtos";
+
+enum Type {
+  NONE = 0;
+  ADDITION = 1;
+  SUBTRACTION = 2;
+  MULTIPLICATION = 3;
+  DIVISION = 4;
+  MODULAR = 5;
+  CONSENSUS = 6;
+}
+
+message Request {
+  optional string message = 1;
+  optional int32 num1 = 2;
+  optional Type type = 3;
+  optional int32 num2 = 4;
+}
+
+message Response {
+  optional int32 result = 1;
+  optional int32 time = 2;
+}
+
