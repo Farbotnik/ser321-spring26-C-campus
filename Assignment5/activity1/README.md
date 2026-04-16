@@ -14,7 +14,7 @@ This system uses Proto for its protocol to communicate between a Leader and N Wo
 1. The Leader connects to each Worker on consecutive ports starting at 9099.
 2. For each task, the Leader sends a Request to every Worker with the operation and operands. The worker's ID is sent in the message field.
 3. Each Worker computes the result, sends back a Response, and waits.
-4. The Leader collects responses for up to 50ms, then runs consensus. 
+4. The Leader collects responses for up to 20 seconds, then runs consensus. 
 5. A value wins if more than half of all workers agree on it. If no single answer has enough votes, whoever got the most votes still wins. If it's a perfect tie with no clear winner, the round is skipped and the vote breakdown is shown. 
 6. The Leader sends a CONSENSUS type Request to all Workers announcing the final result. This request carries the agreed value in num1, the agreed count in num2, and total workers in message. 
 7. Workers receive the consensus message, print the result, check if they voted with the majority, then wait for the next task.
@@ -52,7 +52,7 @@ gradle runLeader -Pworkers=5
 
 **Response failures** : each worker response is collected on its own thread. If a worker crashes or times out, it is excluded from the vote count.
 
-**50 ms timeout** : the leader waits at most 50ms for all responses, then proceeds with whatever has come in.
+**10 second timeout** : the leader waits at most 20 seconds for all responses, then proceeds with whatever has come in.
 
 **Consensus** : a result only wins if it receives votes from strictly more than half of all workers.
 

@@ -65,6 +65,7 @@ task runWorker(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     description = "Run Worker"
     main = 'server.Worker'
+    standardInput = System.in
     doFirst {
         // Derive port from worker number in ID (Worker1 -> 9099, Worker2 -> 9100, etc.)
         def workerNum = id.replaceAll("[^0-9]", "").toInteger()

@@ -151,8 +151,8 @@ class Leader {
                 responseThreads[i].start();
             }
 
-            // Wait up to 50ms total for responses
-            long deadline = System.currentTimeMillis() + 50;
+            // Wait up to 20 seconds total for responses
+            long deadline = System.currentTimeMillis() + 20000;
             for (int i = 0; i < numWorkers; i++) {
                 long remaining = deadline - System.currentTimeMillis();
                 if (remaining > 0) {

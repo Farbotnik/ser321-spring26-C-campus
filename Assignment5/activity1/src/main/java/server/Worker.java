@@ -3,6 +3,7 @@ import java.net.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Scanner;
 import buffers.OperationProtos.*;
 
 class Worker implements Runnable {
@@ -104,29 +105,9 @@ class Worker implements Runnable {
 
                 System.out.println(workerId + " Task received: " + req.getNum1() + " " + typeToSymbol(req.getType()) + " " + req.getNum2());
 
-                int result = 0;
-                switch (req.getType()) {
-                    case ADDITION:
-                        result = req.getNum1() + req.getNum2();
-                        break;
-                    case SUBTRACTION:
-                        result = req.getNum1() - req.getNum2();
-                        break;
-                    case MULTIPLICATION:
-                        result = req.getNum1() * req.getNum2();
-                        break;
-                    case DIVISION:
-                        result = req.getNum1() / req.getNum2();
-                        break;
-                    case MODULAR:
-                        result = req.getNum1() % req.getNum2();
-                        break;
-                    default:
-                        result = 0;
-                        break;
-                }
-
-                System.out.println("Enter your result: " + result);
+                Scanner scanner = new Scanner(System.in);
+                System.out.print("Enter your result: ");
+                int result = scanner.nextInt();
 
                 Response.Builder b = Response.newBuilder();
                 b.setResult(result);
