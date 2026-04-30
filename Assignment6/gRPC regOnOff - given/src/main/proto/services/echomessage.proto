@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "service";
+option java_outer_classname = "EchoProto";
+
+package services;
+
+service Echo {
+  rpc parrot (ClientRequest) returns (ServerResponse) {}
+}
+
+// The request message
+message ClientRequest {
+  string message = 1;
+}
+
+// The response message
+message ServerResponse {
+  bool isSuccess = 1; // unsuccessful if message in request is missing or empty or other issues
+  string message = 2;
+  string error = 3;
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "title": "1984",
+    "author": "George Orwell",
+    "isbn": "978-0451524935"
+  },
+  {
+    "title": "To Kill a Mockingbird",
+    "author": "Harper Lee",
+    "isbn": "978-0061120084"
+  },
+  {
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "isbn": "978-0743273565"
+  },
+  {
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "isbn": "978-0141439518"
+  },
+  {
+    "title": "The Catcher in the Rye",
+    "author": "J.D. Salinger",
+    "isbn": "978-0316769174"
+  },
+  {
+    "title": "Brave New World",
+    "author": "Aldous Huxley",
+    "isbn": "978-0060850524"
+  },
+  {
+    "title": "Moby-Dick",
+    "author": "Herman Melville",
+    "isbn": "978-1503280786"
+  },
+  {
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "isbn": "978-0547928227"
+  }
+]

@@ -1,0 +1,70 @@
+// This service converts between different units of measurement.
+// Supports length, weight, and temperature conversions.
+// The server must validate that the from_unit and to_unit are compatible (same type).
+// IMPORTANT: Make sure to validate all inputs before processing
+// NOTE: Conversion formulas should be accurate to at least 2 decimal places
+
+// some error messages to use in the servers responses:
+// value is required
+// from_unit is required
+// to_unit is required
+// unsupported unit: [unit_name]
+// units do not match - cannot convert [from_unit] to [to_unit]
+// same unit - no conversion needed
+// temperature below absolute zero (−273.15°C or −459.67°F)
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "service";
+option java_outer_classname = "ConverterProto";
+
+package services;
+
+service Converter {
+  rpc convert (ConversionRequest) returns (ConversionResponse) {}
+}
+
+// The request for unit conversion
+message ConversionRequest {
+  double value = 1;          // The value to convert
+  string from_unit = 2;      // Source unit (e.g., "KILOMETER", "POUND", "CELSIUS")
+  string to_unit = 3;        // Target unit (e.g., "MILE", "KILOGRAM", "FAHRENHEIT")
+}
+
+// The response for unit conversion
+message ConversionResponse {
+  bool isSuccess = 1;
+  double result = 2;         // The converted value
+  string error = 3;          // Error message if isSuccess is false
+}
+
+// Supported units (for reference - students implement as strings):
+//
+// LENGTH:
+//   - KILOMETER (km)
+//   - MILE (mi)
+//   - YARD (yd)
+//   - FOOT (ft)
+//
+// WEIGHT:
+//   - KILOGRAM (kg)
+//   - POUND (lb)
+//
+// TEMPERATURE:
+//   - CELSIUS (C)
+//   - FAHRENHEIT (F)
+//
+// Conversion formulas (for reference):
+// Length:
+//   1 km = 0.621371 miles
+//   1 mile = 1760 yards
+//   1 yard = 3 feet
+//   1 km = 1000 meters, 1 mile = 1609.34 meters (use meter as base)
+//
+// Weight:
+//   1 kg = 2.20462 pounds
+//
+// Temperature:
+//   F = (C × 9/5) + 32
+//   C = (F - 32) × 5/9

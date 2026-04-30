@@ -1,0 +1,85 @@
+// This service manages a book library with borrowing functionality.
+// Clients can list all books, search by title/author, borrow books, and return books.
+// The server must maintain persistent state - save data to a JSON file.
+//
+// INITIALIZATION:
+// - A books.json file is provided with initial book data (title|author|isbn format, one per line)
+// - On first run, load books from books.txt and create library_data.json
+// - On subsequent runs, load from library_data.json (which preserves borrowed state)
+// - Save to library_data.json after each borrow/return operation
+//
+// IMPORTANT: Make sure to validate all inputs before processing
+// TODO: Consider implementing a due date system for borrowed books (bonus feature - return_by)
+
+// some error messages to use in the servers responses:
+// no books in library yet - for list and search
+// no books found matching query - for search
+// book not found - for borrow and return (invalid ISBN)
+// book is already borrowed - for borrow
+// book is not borrowed - for return
+// borrower name is required - for borrow
+// missing field - for any request with empty required field
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "service";
+option java_outer_classname = "LibraryProto";
+
+import "google/protobuf/empty.proto";
+
+package services;
+
+service Library {
+  rpc listBooks (google.protobuf.Empty) returns (BookListResponse) {}
+  rpc searchBooks (BookSearchRequest) returns (BookListResponse) {}
+  rpc borrowBook (BorrowRequest) returns (BorrowResponse) {}
+  rpc returnBook (ReturnRequest) returns (ReturnResponse) {}
+}
+
+// Book information
+message Book {
+  string title = 1;
+  string author = 2;
+  string isbn = 3; // Unique identifier
+  bool is_borrowed = 4;
+  string borrowed_by = 5; // Empty if not borrowed
+  string return_by = 6; // Due date in YYYY-MM-DD format, empty if not borrowed
+}
+
+// The response when listing or searching books
+message BookListResponse {
+  bool isSuccess = 1;
+  repeated Book books = 2; // All books or filtered by search
+  string error = 3; // Error message if isSuccess is false
+}
+
+// The request to search for books
+message BookSearchRequest {
+  string query = 1; // Search query (checks both title and author)
+}
+
+// The request to borrow a book
+message BorrowRequest {
+  string isbn = 1;
+  string borrower_name = 2;
+}
+
+// The response for borrowing a book
+message BorrowResponse {
+  bool isSuccess = 1;
+  string message = 2; // Success message
+  string error = 3; // Error message if isSuccess is false
+}
+
+// The request to return a book
+message ReturnRequest {
+  string isbn = 1;
+}
+
+// The response for returning a book
+message ReturnResponse {
+  bool isSuccess = 1;
+  string message = 2; // Success message
+  string error = 3; // Error message if isSuccess is false
+}
