@@ -1,0 +1,75 @@
+// Pokemon Battle service.
+// Players create named Pokemon with a type (FIRE, WATER, GRASS) and battle them
+// using rock-paper-scissors type matchups: FIRE beats GRASS, GRASS beats WATER, WATER beats FIRE.
+// Battle results are stored persistently on the server.
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "service";
+option java_outer_classname = "PokemonProto";
+
+package services;
+
+service PokemonBattle {
+  rpc CreatePokemon (CreatePokemonRequest) returns (PokemonResponse) {}
+  rpc BattlePokemon (BattlePokemonRequest) returns (BattleResult) {}
+  rpc GetBattleHistory (HistoryRequest) returns (BattleHistoryResponse) {}
+  rpc ListPokemon (google.protobuf.Empty) returns (PokemonListResponse) {}
+}
+
+enum PokemonType {
+  UNKNOWN = 0;
+  FIRE = 1;
+  WATER = 2;
+  GRASS = 3;
+}
+
+message Pokemon {
+  int32 id = 1;
+  string name = 2;
+  PokemonType type = 3;
+}
+
+message CreatePokemonRequest {
+  string name = 1;
+  PokemonType type = 2;
+}
+
+message PokemonResponse {
+  bool isSuccess = 1;
+  Pokemon pokemon = 2;
+  string error = 3;
+}
+
+message BattlePokemonRequest {
+  string pokemon1_name = 1;
+  string pokemon2_name = 2;
+}
+
+message BattleResult {
+  bool isSuccess = 1;
+  Pokemon pokemon1 = 2;
+  Pokemon pokemon2 = 3;
+  string result = 4;       // "WIN" (p1 wins), "LOSE" (p2 wins), or "TIE"
+  string winner_name = 5;  // name of winner, or "none (tie)"
+  string error = 6;
+}
+
+message HistoryRequest {
+  int32 limit = 1; // how many recent battles to return; 0 means all
+}
+
+message BattleHistoryResponse {
+  bool isSuccess = 1;
+  repeated BattleResult battles = 2;
+  string error = 3;
+}
+
+message PokemonListResponse {
+  bool isSuccess = 1;
+  repeated Pokemon pokemons = 2;
+  string error = 3;
+}

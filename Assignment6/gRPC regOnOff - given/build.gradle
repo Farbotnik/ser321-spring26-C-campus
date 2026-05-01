@@ -101,6 +101,12 @@ task arguments {
     if (project.hasProperty("serviceHost")) {
       serviceHost = project.getProperty("serviceHost")
     }
+    if (project.hasProperty("host")) {
+      serviceHost = project.getProperty("host")
+    }
+    if (project.hasProperty("port")) {
+      servicePort = project.getProperty("port")
+    }
     if (project.hasProperty("regOn")) {
       regOn = project.getProperty("regOn")
     }

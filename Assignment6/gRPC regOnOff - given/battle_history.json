@@ -1,0 +1,34 @@
+[
+  {
+    "p1_type": "FIRE",
+    "result": "You Tie",
+    "p2_name": "ponyta",
+    "winner_name": "ponyta",
+    "p2_type": "FIRE",
+    "p1_name": "vulpix"
+  },
+  {
+    "p1_type": "WATER",
+    "result": "You Lose",
+    "p2_name": "bulbasaur",
+    "winner_name": "bulbasaur",
+    "p2_type": "GRASS",
+    "p1_name": "staryu"
+  },
+  {
+    "p1_type": "GRASS",
+    "result": "You Lose",
+    "p2_name": "charmander",
+    "winner_name": "charmander",
+    "p2_type": "FIRE",
+    "p1_name": "venusaur"
+  },
+  {
+    "p1_type": "GRASS",
+    "result": "You Win",
+    "p2_name": "wartortle",
+    "winner_name": "wartortle",
+    "p2_type": "WATER",
+    "p1_name": "bulbasaur"
+  }
+]

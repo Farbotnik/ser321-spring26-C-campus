@@ -38,6 +38,8 @@ public class Node {
         .addService(new EchoImpl())
         .addService(new JokeImpl())
         .addService(new ConverterImpl())
+        .addService(new LibraryImpl())
+        .addService(new PokemonBattleImpl())
         .addService(new RegistryAnswerImpl(services)).build().start();
 
     for (var service : server.getServices()) {

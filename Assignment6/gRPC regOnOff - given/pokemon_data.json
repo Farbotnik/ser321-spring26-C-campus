@@ -1,0 +1,47 @@
+[
+  {
+    "name": "bulbasaur",
+    "id": 1,
+    "type": "GRASS"
+  },
+  {
+    "name": "ivvysaur",
+    "id": 2,
+    "type": "GRASS"
+  },
+  {
+    "name": "venusaur",
+    "id": 3,
+    "type": "GRASS"
+  },
+  {
+    "name": "charmander",
+    "id": 4,
+    "type": "FIRE"
+  },
+  {
+    "name": "vulpix",
+    "id": 5,
+    "type": "FIRE"
+  },
+  {
+    "name": "ponyta",
+    "id": 6,
+    "type": "FIRE"
+  },
+  {
+    "name": "squirtle",
+    "id": 7,
+    "type": "WATER"
+  },
+  {
+    "name": "wartortle",
+    "id": 8,
+    "type": "WATER"
+  },
+  {
+    "name": "staryu",
+    "id": 9,
+    "type": "WATER"
+  }
+]
