@@ -205,6 +205,9 @@ public class Client {
   }
 
   public void getNodeServices() {
+    if (blockingStub4 == null) {
+      return;
+    }
     GetServicesReq request = GetServicesReq.newBuilder().build();
     ServicesListRes response;
     try {

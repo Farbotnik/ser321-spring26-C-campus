@@ -109,18 +109,18 @@ public class PokemonBattleImpl extends PokemonBattleGrpc.PokemonBattleImplBase {
     // returns result from p1's perspective
     private String determineResult(PokemonType t1, PokemonType t2) {
         if (t1 == t2) {
-            return "You Tie";
+            return "TIE";
         }
         if (t1 == PokemonType.FIRE && t2 == PokemonType.GRASS) {
-            return "You Win";
+            return "WIN";
         }
         if (t1 == PokemonType.GRASS && t2 == PokemonType.WATER) {
-            return "You Win";
+            return "WIN";
         }
         if (t1 == PokemonType.WATER && t2 == PokemonType.FIRE) {
-            return "You Win";
+            return "WIN";
         }
-        return "You Lose";
+        return "LOSE";
     }
 
     @Override
