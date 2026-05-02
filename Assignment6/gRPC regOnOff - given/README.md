@@ -14,7 +14,7 @@ gradle runClient --console=plain -q
 
 ## Connecting to AWS
 ```bash
-gradle runClient -Phost=3.145.176.74 -Pport=8000
+gradle runClient "-Phost=3.145.176.74" "-Pport=8000" --console=plain -q
 ```
 
 ## About 
