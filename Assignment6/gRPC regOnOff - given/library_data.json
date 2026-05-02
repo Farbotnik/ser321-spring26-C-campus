@@ -13,6 +13,8 @@
     "title": "To Kill a Mockingbird"
   },
   {
+    "is_borrowed": false,
+    "borrowed_by": "",
     "author": "F. Scott Fitzgerald",
     "isbn": "978-0743273565",
     "title": "The Great Gatsby"
@@ -23,6 +25,8 @@
     "title": "Pride and Prejudice"
   },
   {
+    "is_borrowed": false,
+    "borrowed_by": "",
     "author": "J.D. Salinger",
     "isbn": "978-0316769174",
     "title": "The Catcher in the Rye"
@@ -33,11 +37,15 @@
     "title": "Brave New World"
   },
   {
+    "is_borrowed": true,
+    "borrowed_by": "PersistenceUser",
     "author": "Herman Melville",
     "isbn": "978-1503280786",
     "title": "Moby-Dick"
   },
   {
+    "is_borrowed": true,
+    "borrowed_by": "neil",
     "author": "J.R.R. Tolkien",
     "isbn": "978-0547928227",
     "title": "The Hobbit"

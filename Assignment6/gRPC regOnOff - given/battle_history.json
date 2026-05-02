@@ -30,5 +30,29 @@
     "winner_name": "wartortle",
     "p2_type": "WATER",
     "p1_name": "bulbasaur"
+  },
+  {
+    "p1_type": "GRASS",
+    "result": "WIN",
+    "p2_name": "squirtle",
+    "winner_name": "Neil",
+    "p2_type": "WATER",
+    "p1_name": "Neil"
+  },
+  {
+    "p1_type": "GRASS",
+    "result": "LOSE",
+    "p2_name": "ponyta",
+    "winner_name": "ponyta",
+    "p2_type": "FIRE",
+    "p1_name": "Neil"
+  },
+  {
+    "p1_type": "GRASS",
+    "result": "LOSE",
+    "p2_name": "jacoco",
+    "winner_name": "jacoco",
+    "p2_type": "FIRE",
+    "p1_name": "Neil"
   }
 ]
